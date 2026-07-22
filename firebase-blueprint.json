@@ -1,0 +1,16 @@
+{
+  "collections": {
+    "bills": {
+      "rules": ["read: true", "write: true"]
+    },
+    "people": {
+      "rules": ["read: true", "write: true"]
+    },
+    "bearTransactions": {
+      "rules": ["read: true", "write: true"]
+    },
+    "appConfig": {
+      "rules": ["read: true", "write: true"]
+    }
+  }
+}

@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Bill, Person, LineConfig, PromptPayConfig, IndividualSummaryItem, LineNotificationLog, PaymentStatus, BearTransaction, GoogleUser } from './types';
 import {
-  getStoredBills,
-  saveBills,
-  getStoredPeople,
-  savePeople,
-  getStoredLineConfig,
-  saveLineConfig,
-  getStoredPromptPayConfig,
-  savePromptPayConfig,
   getNotificationLogs,
   addNotificationLog,
   INITIAL_BILLS,
   INITIAL_PEOPLE,
+  INITIAL_LINE_CONFIG,
   INITIAL_PROMPTPAY,
   DEMO_BILLS,
   DEMO_PEOPLE,
   DEMO_PROMPTPAY,
 } from './utils/storage';
+import { fb } from './fbUtils';
 import {
   generateLineReminderMessage,
   generateSummaryLineMessage,
@@ -83,11 +77,25 @@ const DEMO_BEAR_TRANSACTIONS: BearTransaction[] = [
 ];
 
 export default function App() {
-  const [bills, setBills] = useState<Bill[]>(getStoredBills);
-  const [people, setPeople] = useState<Person[]>(getStoredPeople);
-  const [lineConfig, setLineConfig] = useState<LineConfig>(getStoredLineConfig);
-  const [promptPayConfig, setPromptPayConfig] = useState<PromptPayConfig>(getStoredPromptPayConfig);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [people, setPeople] = useState<Person[]>(INITIAL_PEOPLE);
+  const [lineConfig, setLineConfig] = useState<LineConfig>({ notifyToken: '', enabledAutoReminder: true, reminderHour: 9, appUrl: 'https://www.bearpay-app.com' });
+  const [promptPayConfig, setPromptPayConfig] = useState<PromptPayConfig>({ type: 'PHONE', target: '', name: '' });
   const [notificationLogs, setNotificationLogs] = useState<LineNotificationLog[]>(getNotificationLogs);
+
+  useEffect(() => {
+    const unsubBills = fb.subscribeBills(setBills);
+    const unsubPeople = fb.subscribePeople(setPeople);
+    const unsubConfig = fb.subscribeConfig((config) => {
+      setLineConfig(config.line);
+      setPromptPayConfig(config.promptPay);
+    });
+    return () => {
+      unsubBills();
+      unsubPeople();
+      unsubConfig();
+    };
+  }, []);
 
   // Google Authentication State
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
@@ -125,8 +133,7 @@ export default function App() {
       }
       return p;
     });
-    setPeople(updatedPeople);
-    savePeople(updatedPeople);
+    updatedPeople.forEach(p => fb.savePerson(p));
 
     showToast(`🟢 เข้าสู่ระบบ Google ในชื่อ ${user.name} เรียบร้อยแล้ว ✨`);
   };
@@ -163,13 +170,11 @@ export default function App() {
   // Clear all system data handler
   const handleClearAllData = () => {
     if (confirm('⚠️ คุณต้องการเคลียร์ข้อมูลออกทั้งหมดใช่หรือไม่?\n\nการดำเนินการนี้จะลบบิลหารค่าใช้จ่ายทั้งหมด รายการจดบันทึกรายรับ-รายจ่ายทั้งหมด สมาชิกกลุ่ม และประวัติแจ้งเตือน ให้เริ่มต้นเป็น 0')) {
-      setBills([]);
-      saveBills([]);
-      setBearTransactions([]);
-      setPeople(INITIAL_PEOPLE);
-      savePeople(INITIAL_PEOPLE);
-      setPromptPayConfig(INITIAL_PROMPTPAY);
-      savePromptPayConfig(INITIAL_PROMPTPAY);
+      bills.forEach(b => fb.deleteBill(b.id));
+      bearTransactions.forEach(t => fb.deleteBearTransaction(t.id));
+      people.forEach(p => { if(!p.isMe) fb.deletePerson(p.id) });
+      fb.savePromptPayConfig(INITIAL_PROMPTPAY);
+      fb.saveLineConfig(INITIAL_LINE_CONFIG);
       setNotificationLogs([]);
       setIsTripCardDismissed(true);
       localStorage.setItem('khunthong_bear_transactions_v2', JSON.stringify([]));
@@ -182,13 +187,10 @@ export default function App() {
   // Restore sample demo data handler
   const handleRestoreDemoData = () => {
     if (confirm('คุณต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่?')) {
-      setBills(DEMO_BILLS);
-      saveBills(DEMO_BILLS);
-      setPeople(DEMO_PEOPLE);
-      savePeople(DEMO_PEOPLE);
-      setPromptPayConfig(DEMO_PROMPTPAY);
-      savePromptPayConfig(DEMO_PROMPTPAY);
-      setBearTransactions(DEMO_BEAR_TRANSACTIONS);
+      DEMO_BILLS.forEach(b => fb.saveBill(b));
+      DEMO_PEOPLE.forEach(p => fb.savePerson(p));
+      DEMO_BEAR_TRANSACTIONS.forEach(t => fb.saveBearTransaction(t));
+      fb.savePromptPayConfig(DEMO_PROMPTPAY);
       setIsTripCardDismissed(false);
       localStorage.setItem('khunthong_bear_transactions_v2', JSON.stringify(DEMO_BEAR_TRANSACTIONS));
       localStorage.setItem('bearpay_trip_card_dismissed', 'false');
@@ -210,19 +212,56 @@ export default function App() {
   const [isSettleDebtOpen, setIsSettleDebtOpen] = useState(false);
 
   // Bear Transactions state
-  const [bearTransactions, setBearTransactions] = useState<BearTransaction[]>(() => {
-    const data = localStorage.getItem('khunthong_bear_transactions_v2');
-    if (!data) return INITIAL_BEAR_TRANSACTIONS;
-    try {
-      return JSON.parse(data);
-    } catch {
-      return INITIAL_BEAR_TRANSACTIONS;
-    }
-  });
+  const [bearTransactions, setBearTransactions] = useState<BearTransaction[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('khunthong_bear_transactions_v2', JSON.stringify(bearTransactions));
-  }, [bearTransactions]);
+    const unsub = fb.subscribeBearTransactions(setBearTransactions);
+    return () => unsub();
+  }, []);
+
+  // Sync with LINE Bot Slips via Background Polling
+  useEffect(() => {
+    const fetchSlips = async () => {
+      try {
+        const res = await fetch('/api/slips/recent');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const slips = data.data;
+            for (const slip of slips) {
+              const newTx: BearTransaction = {
+                id: 'tx_line_' + slip.id,
+                personId: 'me',
+                type: 'EXPENSE',
+                amount: slip.amount,
+                category: 'สลิปจาก LINE',
+                categoryIcon: '📱',
+                date: new Date(slip.timestamp).toISOString().split('T')[0],
+                note: `ผู้รับ: ${slip.receiverName || '-'} | ${slip.summaryNote}`,
+                bearMood: '🐻 หมีเปย์บันทึกจากแชทแล้วฮะ!',
+                createdAt: new Date(slip.timestamp).toISOString(),
+              };
+              fb.saveBearTransaction(newTx);
+              showToast(`🐻 ซิงค์สลิป ${slip.amount} บาทจาก LINE สำเร็จ!`);
+              
+              // Clear it from the server
+              await fetch('/api/slips/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: slip.id })
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error polling LINE slips", err);
+      }
+    };
+    
+    // Poll every 5 seconds
+    const interval = setInterval(fetchSlips, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // LINE Flex Card Preview Modal
   const [flexModalData, setFlexModalData] = useState<{
@@ -243,22 +282,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Sync state changes to storage
-  useEffect(() => {
-    saveBills(bills);
-  }, [bills]);
-
-  useEffect(() => {
-    savePeople(people);
-  }, [people]);
-
-  useEffect(() => {
-    saveLineConfig(lineConfig);
-  }, [lineConfig]);
-
-  useEffect(() => {
-    savePromptPayConfig(promptPayConfig);
-  }, [promptPayConfig]);
+  
 
   // Calculate Overall Dashboard Metrics & Individual Summaries
   let totalOwedToMe = 0;
@@ -325,10 +349,10 @@ export default function App() {
   // Handlers
   const handleSaveNewBill = (newBill: Bill | Bill[]) => {
     if (Array.isArray(newBill)) {
-      setBills(prev => [...newBill, ...prev]);
+      newBill.forEach(b => fb.saveBill(b));
       showToast(`สร้างบิลผ่อนชำระแยกวัน ${newBill.length} รายการสำเร็จเรียบร้อย! 🤝`);
     } else {
-      setBills(prev => [newBill, ...prev]);
+      fb.saveBill(newBill);
       showToast(`สร้างบิล "${newBill.title}" สำเร็จเรียบร้อย! 🐥`);
     }
   };
@@ -340,30 +364,26 @@ export default function App() {
     slipUrl?: string,
     notes?: string
   ) => {
-    setBills(prevBills =>
-      prevBills.map(bill => {
-        if (bill.id !== billId) return bill;
-
-        const updatedParticipants = bill.participants.map(part => {
-          if (part.personId !== personId) return part;
-          return {
-            ...part,
-            status,
-            paidAt: status === 'PAID' ? new Date().toISOString() : part.paidAt,
-            slipUrl: slipUrl || part.slipUrl,
-            slipNotes: notes || part.slipNotes,
-          };
-        });
-
-        const isCompleted = updatedParticipants.every(p => p.status === 'PAID');
-
+    const billToUpdate = bills.find(b => b.id === billId);
+    if (billToUpdate) {
+      const updatedParticipants = billToUpdate.participants.map(part => {
+        if (part.personId !== personId) return part;
         return {
-          ...bill,
-          participants: updatedParticipants,
-          isCompleted,
+          ...part,
+          status,
+          paidAt: status === 'PAID' ? new Date().toISOString() : part.paidAt,
+          slipUrl: slipUrl || part.slipUrl,
+          slipNotes: notes || part.slipNotes,
         };
-      })
-    );
+      });
+      const isCompleted = updatedParticipants.every(p => p.status === 'PAID');
+      const updatedBill = {
+        ...billToUpdate,
+        participants: updatedParticipants,
+        isCompleted,
+      };
+      fb.saveBill(updatedBill);
+    }
 
     // Update selected bill state if modal is open
     if (selectedBill && selectedBill.id === billId) {
@@ -391,7 +411,7 @@ export default function App() {
   };
 
   const handleDeleteBill = (billId: string) => {
-    setBills(prev => prev.filter(b => b.id !== billId));
+    fb.deleteBill(billId);
     showToast('ลบบิลเรียบร้อยแล้ว');
   };
 

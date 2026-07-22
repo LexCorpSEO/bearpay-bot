@@ -3,16 +3,42 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 
+// In-memory store for slips from LINE
+interface ParsedSlip {
+  id: string;
+  payerName: string;
+  receiverName: string;
+  amount: number;
+  transactionDate: string;
+  summaryNote: string;
+  timestamp: number;
+}
+const recentSlips: ParsedSlip[] = [];
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   // Middleware for parsing JSON with higher size limit for image uploads
-  app.use(express.json({ limit: "15mb" }));
+  app.use(express.json({ limit: "50mb" }));
 
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Get recent slips for frontend to sync
+  app.get("/api/slips/recent", (req, res) => {
+    res.json({ success: true, data: recentSlips });
+  });
+
+  app.post("/api/slips/clear", (req, res) => {
+    const { id } = req.body;
+    const idx = recentSlips.findIndex(s => s.id === id);
+    if (idx !== -1) {
+      recentSlips.splice(idx, 1);
+    }
+    res.json({ success: true });
   });
 
   // Google OAuth Userinfo endpoint
@@ -118,7 +144,7 @@ async function startServer() {
       const ai = new GoogleGenAI({ apiKey });
 
       // Clean base64 string
-      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
 
       const prompt = `คุณคือระบบ AI ผู้ช่วยวิเคราะห์ใบเสร็จและใบแจ้งหนี้ภาษาไทย
 กรุณาอ่านรูปภาพใบเสร็จนี้และสกัดข้อมูลออกมาเป็น JSON บริสุทธิ์เท่านั้น (ไม่มี markdown block \`\`\`json) ดังนี้:
@@ -203,7 +229,7 @@ async function startServer() {
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
 
       const prompt = `คุณคือ AI ตรวจสอบสลิปโอนเงินธนาคารไทย (K PLUS, SCB, Krungthai NEXT, Bangkok Bank, ttbbank ฯลฯ)
 ข้อมูลที่ใช้เปรียบเทียบ:
@@ -270,20 +296,23 @@ async function startServer() {
 
 
   // LINE Messaging API Webhook
-  app.post("/api/line/webhook", async (req, res) => {
-    try {
-      const events = req.body.events;
-      if (!events || events.length === 0) {
-        return res.status(200).send("OK");
-      }
+  app.post("/api/line/webhook", (req, res) => {
+    // 1. ตอบกลับ LINE ทันทีเพื่อป้องกัน Timeout (LINE รอรับ 200 OK ภายใน 1-2 วินาที)
+    res.status(200).send("OK");
 
-      const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-      if (!lineToken) {
-        console.error("No LINE_CHANNEL_ACCESS_TOKEN configured");
-        return res.status(200).send("OK");
-      }
+    // 2. ไปประมวลผลต่อใน Background
+    (async () => {
+      try {
+        const events = req.body.events;
+        if (!events || events.length === 0) return;
 
-      for (const event of events) {
+        const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+        if (!lineToken) {
+          console.error("No LINE_CHANNEL_ACCESS_TOKEN configured");
+          return;
+        }
+
+        for (const event of events) {
         if (event.type === "message") {
           const replyToken = event.replyToken;
           
@@ -396,7 +425,16 @@ async function startServer() {
                   const cleanedJsonStr = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
                   const parsedData = JSON.parse(cleanedJsonStr);
                   
-                  let replyMsg = `🐻 พี่หมีเช็คสลิปให้แล้วฮะ!\n\n👤 ผู้โอน: ${parsedData.payerName || '-'}\n💰 ยอดเงิน: ${parsedData.amount} บาท\n📅 เวลา: ${parsedData.transactionDate || '-'}\n\n✨ ${parsedData.summaryNote}`;
+                  // Add to in-memory queue
+                  const slipId = Date.now().toString();
+                  recentSlips.push({
+                    id: slipId,
+                    ...parsedData,
+                    timestamp: Date.now()
+                  });
+                  if (recentSlips.length > 50) recentSlips.shift();
+
+                  let replyMsg = `🐻 พี่หมีเช็คสลิปให้แล้วฮะ!\n\n👤 ผู้โอน: ${parsedData.payerName || '-'}\n💰 ยอดเงิน: ${parsedData.amount} บาท\n📅 เวลา: ${parsedData.transactionDate || '-'}\n\n✨ ${parsedData.summaryNote}\n\n📲 เข้าแอปเพื่อบันทึกบิลนี้: https://ais-dev-lnvuyy45wsukgc7ifg775o-150882525673.asia-southeast1.run.app`;
                   
                   await fetch("https://api.line.me/v2/bot/message/reply", {
                     method: "POST",
@@ -444,13 +482,11 @@ async function startServer() {
           }
         }
       }
-
-      res.status(200).send("OK");
     } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(500).send("Error");
+      console.error("Webhook background processing error:", error);
     }
-  });
+  })();
+});
 
   // Vite Development / Production Setup
   if (process.env.NODE_ENV !== "production") {
