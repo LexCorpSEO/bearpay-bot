@@ -1,0 +1,6 @@
+{
+  "name": "BearPay (หมีเปย์)",
+  "description": "BearPay (หมีเปย์) - ระบบบันทึก หารค่าใช้จ่าย สรุปยอดหนี้รายบุคคล พร้อมระบบส่งแจ้งเตือนผ่าน LINE และติดตามหนี้ในกลุ่มอัตโนมัติ",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
