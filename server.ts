@@ -289,19 +289,54 @@ async function startServer() {
           
           if (event.message.type === "text") {
             const text = event.message.text;
-            // Simple text reply for testing or AI chat
-            if (text.includes("หมีเปย์") || text.includes("bearpay")) {
-               await fetch("https://api.line.me/v2/bot/message/reply", {
-                 method: "POST",
-                 headers: {
-                   "Content-Type": "application/json",
-                   Authorization: `Bearer ${lineToken}`,
-                 },
-                 body: JSON.stringify({
-                   replyToken: replyToken,
-                   messages: [{ type: "text", text: "สวัสดีครับ พี่หมีเปย์พร้อมช่วยหารค่าใช้จ่ายแล้วฮะ 🐻💸\nส่งสลิปโอนเงินมาให้พี่หมีเช็คได้เลยฮะ" }]
-                 })
-               });
+            const apiKey = process.env.GEMINI_API_KEY;
+            
+            if (apiKey) {
+              try {
+                const ai = new GoogleGenAI({ apiKey });
+                const aiResponse = await ai.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: "คุณคือ 'พี่หมีเปย์' (BearPay) บอทหมีน่ารัก ใจดี เป็นกันเอง ชอบใช้คำว่า 'ฮะ' หรือ 'ครับผม' คอยช่วยหารค่าใช้จ่ายและตรวจสอบสลิปโอนเงิน \n\nตอบคำถามหรือทักทายผู้ใช้นี้ (ตอบสั้นๆ กระชับ): " + text,
+                });
+                
+                const replyMsg = aiResponse.text?.trim() || "พี่หมีงงฮะ 🐻";
+                await fetch("https://api.line.me/v2/bot/message/reply", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${lineToken}`,
+                  },
+                  body: JSON.stringify({
+                    replyToken: replyToken,
+                    messages: [{ type: "text", text: replyMsg }]
+                  })
+                });
+              } catch (e) {
+                console.error("Text chat error", e);
+                await fetch("https://api.line.me/v2/bot/message/reply", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` },
+                  body: JSON.stringify({
+                    replyToken: replyToken,
+                    messages: [{ type: "text", text: "พี่หมีมีปัญหานิดหน่อยฮะ 🐻💧 (API Error)" }]
+                  })
+                });
+              }
+            } else {
+              // Fallback if no API key
+              if (text.includes("หมีเปย์") || text.includes("bearpay")) {
+                 await fetch("https://api.line.me/v2/bot/message/reply", {
+                   method: "POST",
+                   headers: {
+                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${lineToken}`,
+                   },
+                   body: JSON.stringify({
+                     replyToken: replyToken,
+                     messages: [{ type: "text", text: "สวัสดีครับ พี่หมีเปย์พร้อมช่วยหารค่าใช้จ่ายแล้วฮะ 🐻💸\nส่งสลิปโอนเงินมาให้พี่หมีเช็คได้เลยฮะ" }]
+                   })
+                 });
+              }
             }
           } else if (event.message.type === "image") {
             // Handle image for slip verification
@@ -377,8 +412,34 @@ async function startServer() {
                   
                 } catch (e) {
                   console.error("AI error processing slip", e);
+                  await fetch("https://api.line.me/v2/bot/message/reply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` },
+                    body: JSON.stringify({
+                      replyToken: replyToken,
+                      messages: [{ type: "text", text: "พี่หมีอ่านสลิปใบนี้ไม่ออกฮะ ลองส่งมาใหม่ดูนะฮะ 🐻💧" }]
+                    })
+                  });
                 }
+              } else {
+                 await fetch("https://api.line.me/v2/bot/message/reply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` },
+                    body: JSON.stringify({
+                      replyToken: replyToken,
+                      messages: [{ type: "text", text: "ยังไม่ได้ใส่ GEMINI_API_KEY ในระบบฮะ 🐻🔧" }]
+                    })
+                 });
               }
+            } else {
+                await fetch("https://api.line.me/v2/bot/message/reply", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${lineToken}` },
+                  body: JSON.stringify({
+                    replyToken: replyToken,
+                    messages: [{ type: "text", text: "โหลดรูปภาพจาก LINE ไม่สำเร็จฮะ 🐻❌" }]
+                  })
+                });
             }
           }
         }
