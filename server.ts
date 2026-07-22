@@ -135,7 +135,7 @@ async function startServer() {
 ถ้าอ่านส่วนไหนไม่ได้ ให้ประมาณค่าหรือใส่ข้อความสั้นๆ`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -222,7 +222,7 @@ async function startServer() {
 }`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -295,7 +295,7 @@ async function startServer() {
               try {
                 const ai = new GoogleGenAI({ apiKey });
                 const aiResponse = await ai.models.generateContent({
-                  model: "gemini-2.5-flash",
+                  model: "gemini-3.5-flash",
                   contents: "คุณคือ 'พี่หมีเปย์' (BearPay) บอทหมีน่ารัก ใจดี เป็นกันเอง ชอบใช้คำว่า 'ฮะ' หรือ 'ครับผม' คอยช่วยหารค่าใช้จ่ายและตรวจสอบสลิปโอนเงิน \n\nตอบคำถามหรือทักทายผู้ใช้นี้ (ตอบสั้นๆ กระชับ): " + text,
                 });
                 
@@ -367,7 +367,7 @@ async function startServer() {
   "summaryNote": "คำอธิบายสั้นๆ ภาษาไทย เช่น สลิปถูกต้อง ยอดเงิน 350 บาท"
 }`;
                   const aiResponse = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3.5-flash",
                     config: {
                       responseMimeType: "application/json",
                       responseSchema: {
