@@ -78,18 +78,18 @@ export const LineSettingsModal: React.FC<LineSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 shrink-0">
+        <div className="flex items-center justify-between p-4  border-b border-slate-800 bg-slate-900/90 shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">ตั้งค่าระบบแจ้งเตือนผ่าน LINE</h2>
-              <p className="text-xs text-slate-400">ส่งแจ้งเตือนทวงหนี้และสรุปยอดคงเหลือผ่าน LINE Notify</p>
+              <h2 className="text-base font-bold text-white">ตั้งค่า LINE Notify</h2>
+              <p className="text-xs text-slate-400">ส่งแจ้งเตือนบิลต่างๆ</p>
             </div>
           </div>
           <button
@@ -101,7 +101,7 @@ export const LineSettingsModal: React.FC<LineSettingsModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+        <form onSubmit={handleSave} className="p-4  space-y-5 overflow-y-auto flex-1 min-h-0">
           
           {/* Guide Banner */}
           <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4 text-xs space-y-2">

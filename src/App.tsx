@@ -33,6 +33,9 @@ import { LineGroupBotModal } from './components/LineGroupBotModal';
 import { BearTrackerModal } from './components/BearTrackerModal';
 import { BearJodInlineView } from './components/BearJodInlineView';
 import { SettleDebtModal } from './components/SettleDebtModal';
+import { NewBearTransactionModal } from './components/NewBearTransactionModal';
+import { MobilePWAInstallBanner } from './components/MobilePWAInstallBanner';
+import { MobileBottomNav, MobileTab } from './components/MobileBottomNav';
 import { Sparkles, Users, Receipt, Send, Bell } from 'lucide-react';
 
 const INITIAL_BEAR_TRANSACTIONS: BearTransaction[] = [];
@@ -148,7 +151,7 @@ export default function App() {
   const [activeAccountId, setActiveAccountId] = useState<string>('me');
 
   // Main Function Mode Switcher: 'BEAR_PAY' vs 'BEAR_JOD'
-  const [mainMode, setMainMode] = useState<'BEAR_PAY' | 'BEAR_JOD'>('BEAR_PAY');
+  const [mainMode, setMainMode] = useState<'BEAR_PAY' | 'BEAR_JOD'>('BEAR_JOD');
 
   const [isTripCardDismissed, setIsTripCardDismissed] = useState<boolean>(() => {
     try {
@@ -208,7 +211,7 @@ export default function App() {
   const [isPromptPayOpen, setIsPromptPayOpen] = useState(false);
   const [isFriendManagerOpen, setIsFriendManagerOpen] = useState(false);
   const [isLineGroupBotOpen, setIsLineGroupBotOpen] = useState(false);
-  const [isMeowTrackerOpen, setIsMeowTrackerOpen] = useState(false);
+  const [isNewBearTransactionOpen, setIsNewBearTransactionOpen] = useState(false);
   const [isSettleDebtOpen, setIsSettleDebtOpen] = useState(false);
 
   // Bear Transactions state
@@ -624,6 +627,9 @@ export default function App() {
         </div>
       )}
 
+      {/* PWA Mobile Installation Banner */}
+      <MobilePWAInstallBanner />
+
       {/* Main App Navbar Header */}
       <Header
         lineConfig={lineConfig}
@@ -636,51 +642,51 @@ export default function App() {
         onOpenPromptPay={() => setIsPromptPayOpen(true)}
         onOpenFriendManager={() => setIsFriendManagerOpen(true)}
         onOpenLineGroupBot={() => setIsLineGroupBotOpen(true)}
-        onOpenMeowTracker={() => setIsMeowTrackerOpen(true)}
+        onOpenMeowTracker={() => setIsNewBearTransactionOpen(true)}
         onOpenSettleDebt={() => setIsSettleDebtOpen(true)}
         onClearAllData={handleClearAllData}
         onRestoreDemoData={handleRestoreDemoData}
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="max-w-7xl mx-auto px-4   pt-6">
         
-        {/* Top Primary Navigation Bar: 2 Main Functions */}
-        <div className="bg-slate-900 border border-slate-800 p-2 rounded-2xl mb-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-2 w-full sm:w-auto">
+        {/* Top Primary Navigation Bar: 2 Main Functions (Hidden on mobile) */}
+        <div className="hidden bg-slate-900 border border-slate-800 p-2 rounded-2xl mb-4 shadow-xl flex-col  items-center justify-between gap-3">
+          <div className="flex items-center space-x-2 w-full ">
             <button
               onClick={() => setMainMode('BEAR_PAY')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-black transition-all ${
+              className={`flex-1  flex items-center justify-center space-x-2 px-5 py-3 rounded-xl text-xs  font-black transition-all ${
                 mainMode === 'BEAR_PAY'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 scale-[1.02]'
                   : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
               <span className="text-base">🤝</span>
-              <span>BearPay (หารค่าใช้จ่ายกลุ่ม & ทวงหนี้ผ่าน LINE)</span>
+              <span>หารค่าใช้จ่ายกลุ่ม</span>
             </button>
 
             <button
               onClick={() => setMainMode('BEAR_JOD')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-black transition-all ${
+              className={`flex-1  flex items-center justify-center space-x-2 px-5 py-3 rounded-xl text-xs  font-black transition-all ${
                 mainMode === 'BEAR_JOD'
                   ? 'bg-gradient-to-r from-amber-500 to-orange-400 text-slate-950 shadow-lg shadow-amber-500/20 scale-[1.02]'
                   : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
               <span className="text-base">🐻</span>
-              <span>บันทึกรายรับ-รายจ่าย (ถ่ายสรุป/สแกนสลิป 📸)</span>
+              <span>บันทึกรายรับ-รายจ่าย 📸</span>
             </button>
           </div>
 
-          <div className="text-xs text-slate-400 hidden lg:flex items-center space-x-2 px-3">
+          <div className="text-xs text-slate-400 hidden  items-center space-x-2 px-3">
             {mainMode === 'BEAR_PAY' ? (
               <span className="text-emerald-300 font-bold flex items-center space-x-1">
-                <span>💬 BearPay: แยกบิลกลุ่ม & ส่งสรุปยอดทวงหนี้ผ่าน LINE</span>
+                <span>💬 แยกบิลกลุ่ม & ส่งสรุปยอดทวงหนี้</span>
               </span>
             ) : (
               <span className="text-amber-300 font-bold flex items-center space-x-1">
-                <span>🐻📱 BearPay: บันทึกส่วนบุคคล ถ่ายสรุป/สลิป AI สกัดจดให้อัตโนมัติ</span>
+                <span>🐻📱 บันทึกส่วนบุคคล & สแกนสลิปด้วย AI</span>
               </span>
             )}
           </div>
@@ -699,8 +705,8 @@ export default function App() {
               onSendAllReminders={handleSendAllReminders}
             />
 
-            {/* Primary View Switcher Tabs */}
-            <div className="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 w-fit mb-6">
+            {/* Primary View Switcher Tabs (Hidden on mobile) */}
+            <div className="hidden items-center space-x-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 w-fit mb-6">
               <button
                 onClick={() => setActiveTab('INDIVIDUAL')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -710,7 +716,7 @@ export default function App() {
                 }`}
               >
                 <Users className="w-4 h-4" />
-                <span>สรุปยอดคงเหลือรายบุคคล (Individual Summary)</span>
+                <span>สรุปยอดบุคคล</span>
               </button>
 
               <button
@@ -722,7 +728,7 @@ export default function App() {
                 }`}
               >
                 <Receipt className="w-4 h-4" />
-                <span>รายการบิลทั้งหมด ({bills.length})</span>
+                <span>บิลทั้งหมด ({bills.length})</span>
               </button>
             </div>
 
@@ -862,14 +868,10 @@ export default function App() {
         }}
       />
 
-      <BearTrackerModal
-        isOpen={isMeowTrackerOpen}
-        onClose={() => setIsMeowTrackerOpen(false)}
-        people={people}
-        transactions={bearTransactions}
-        selectedAccountId="me"
+      <NewBearTransactionModal
+        isOpen={isNewBearTransactionOpen}
+        onClose={() => setIsNewBearTransactionOpen(false)}
         onAddTransaction={handleAddBearTransaction}
-        onDeleteTransaction={handleDeleteBearTransaction}
       />
 
       <SettleDebtModal
@@ -888,6 +890,34 @@ export default function App() {
         currentUser={googleUser}
         onLogin={handleGoogleLogin}
         onLogout={handleGoogleLogout}
+      />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={
+          mainMode === 'BEAR_JOD'
+            ? 'HOME'
+            : activeTab === 'BILLS'
+            ? 'BILLS'
+            : 'FRIENDS'
+        }
+        onTabChange={(tab) => {
+          if (tab === 'HOME') {
+            setMainMode('BEAR_JOD');
+          } else if (tab === 'FRIENDS') {
+            setMainMode('BEAR_PAY');
+            setActiveTab('INDIVIDUAL');
+          } else if (tab === 'BILLS') {
+            setMainMode('BEAR_PAY');
+            setActiveTab('BILLS');
+          } else if (tab === 'LINE_BOT') {
+            setIsLineGroupBotOpen(true);
+          } else if (tab === 'SETTINGS') {
+            setIsPromptPayOpen(true);
+          }
+        }}
+        onOpenNewTransactionModal={() => setIsNewBearTransactionOpen(true)}
+        onOpenNewBillModal={() => setIsNewBillOpen(true)}
       />
 
     </div>

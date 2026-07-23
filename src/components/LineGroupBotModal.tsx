@@ -3,6 +3,7 @@ import { Person, Bill, PromptPayConfig } from '../types';
 import { Send, Copy, Check, X, Bot, Sparkles, Image as ImageIcon, Camera, Loader2, CheckCircle } from 'lucide-react';
 import { formatTHB } from '../utils/thaiFormatters';
 import { getPromptPayQRImageUrl } from '../utils/promptpay';
+import { compressImageForAI } from '../utils/imageCompressor';
 
 interface LineGroupBotModalProps {
   isOpen: boolean;
@@ -150,20 +151,19 @@ export const LineGroupBotModal: React.FC<LineGroupBotModalProps> = ({
     }, 600);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Data = event.target?.result as string;
-      
+    try {
+      const compressed = await compressImageForAI(file, 1200, 0.82);
+
       const userMsgId = Date.now().toString();
       setMessages(prev => [...prev, {
         id: userMsgId,
         sender: 'user',
         type: 'image',
-        content: base64Data,
+        content: compressed.dataUrl,
         timestamp: new Date()
       }]);
 
@@ -178,65 +178,62 @@ export const LineGroupBotModal: React.FC<LineGroupBotModalProps> = ({
         isProcessing: true
       }]);
 
-      try {
-        const res = await fetch('/api/gemini/scan-slip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64Data,
-            mimeType: file.type || 'image/jpeg'
-          })
-        });
-        const json = await res.json();
+      const res = await fetch('/api/gemini/scan-slip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: compressed.base64Data,
+          mimeType: compressed.mimeType
+        })
+      });
+      const json = await res.json();
 
-        if (json.success && json.data) {
-          const data = json.data;
-          
-          let flexText = `✅ **ตรวจสอบสลิปสำเร็จ!**\n\nผู้โอน: ${data.payerName || 'ไม่ทราบชื่อ'}\nยอดเงิน: ${formatTHB(data.amount)}\nวันที่: ${data.transactionDate || 'ไม่ระบุ'}`;
-          
-          let matchedPerson = null;
-          if (data.payerName) {
-            matchedPerson = debtorPeople.find(p => 
-              data.payerName.toLowerCase().includes(p.name.toLowerCase()) || 
-              p.name.toLowerCase().includes(data.payerName.toLowerCase())
-            );
-          }
-
-          if (matchedPerson) {
-            flexText += `\n\n🎉 ยืนยันว่าคุณ ${matchedPerson.name} จ่ายแล้ว! ระบบอัปเดตยอดให้แล้วครับ`;
-            if (onConfirmSettlePersonDebt) {
-              onConfirmSettlePersonDebt(matchedPerson.id);
-            }
-          } else {
-            flexText += `\n\n⚠️ ไม่สามารถจับคู่ชื่อผู้โอนกับสมาชิกในกลุ่มได้ กรุณาตรวจสอบอีกครั้ง`;
-          }
-
-          setMessages(prev => prev.map(m => m.id === botMsgId ? {
-            ...m,
-            type: 'flex',
-            content: flexText,
-            isProcessing: false,
-            flexData: { success: true }
-          } : m));
-
-        } else {
-          throw new Error('Verification failed');
+      if (json.success && json.data) {
+        const data = json.data;
+        
+        let flexText = `✅ **ตรวจสอบสลิปสำเร็จ!**\n\nผู้โอน: ${data.payerName || 'ไม่ทราบชื่อ'}\nยอดเงิน: ${formatTHB(data.amount)}\nวันที่: ${data.transactionDate || 'ไม่ระบุ'}`;
+        
+        let matchedPerson = null;
+        if (data.payerName) {
+          matchedPerson = debtorPeople.find(p => 
+            data.payerName.toLowerCase().includes(p.name.toLowerCase()) || 
+            p.name.toLowerCase().includes(data.payerName.toLowerCase())
+          );
         }
-      } catch (err) {
+
+        if (matchedPerson) {
+          flexText += `\n\n🎉 ยืนยันว่าคุณ ${matchedPerson.name} จ่ายแล้ว! ระบบอัปเดตยอดให้แล้วครับ`;
+          if (onConfirmSettlePersonDebt) {
+            onConfirmSettlePersonDebt(matchedPerson.id);
+          }
+        } else {
+          flexText += `\n\n⚠️ ไม่สามารถจับคู่ชื่อผู้โอนกับสมาชิกในกลุ่มได้ กรุณาตรวจสอบอีกครั้ง`;
+        }
+
         setMessages(prev => prev.map(m => m.id === botMsgId ? {
           ...m,
-          content: '❌ ขออภัยครับ พี่หมีตรวจสลิปนี้ไม่ผ่าน หรือรูปอาจจะไม่ชัดเจน รบกวนส่งใหม่อีกครั้งนะครับ',
-          isProcessing: false
+          type: 'flex',
+          content: flexText,
+          isProcessing: false,
+          flexData: { success: true }
         } : m));
+
+      } else {
+        throw new Error('Verification failed');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setMessages(prev => prev.map(m => m.sender === 'bot' && m.isProcessing ? {
+        ...m,
+        content: '❌ ขออภัยครับ พี่หมีตรวจสลิปนี้ไม่ผ่าน หรือรูปอาจจะไม่ชัดเจน รบกวนส่งใหม่อีกครั้งนะครับ',
+        isProcessing: false
+      } : m));
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-[#8BA1BD] border border-slate-800 rounded-3xl w-full max-w-lg my-auto overflow-hidden shadow-2xl flex flex-col h-[85vh] sm:h-[800px]">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div className="bg-[#8BA1BD] border border-slate-800 rounded-3xl w-full max-w-3xl my-auto overflow-hidden shadow-2xl flex flex-col h-[85vh] ">
         
         {/* Header - LINE Style */}
         <div className="flex items-center justify-between p-4 bg-[#212429] border-b border-slate-800 shrink-0">
@@ -332,7 +329,7 @@ export const LineGroupBotModal: React.FC<LineGroupBotModalProps> = ({
         </div>
 
         {/* Chat Input */}
-        <div className="p-3 sm:p-4 bg-white border-t border-slate-200 shrink-0">
+        <div className="p-3  bg-white border-t border-slate-200 shrink-0">
           <div className="flex flex-wrap gap-2 mb-3">
              <button onClick={() => handleSendMessage('@BearPay สรุปยอด')} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors border border-slate-200">
                🐻 สรุปยอดหนี้

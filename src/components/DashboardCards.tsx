@@ -20,13 +20,13 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
   onSendAllReminders,
 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="flex gap-4 mb-6 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar -mx-4 px-4">
       
       {/* 1. Total Owed To Me */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-emerald-500/40 transition-all w-[85%] max-w-[320px]  snap-center shrink-0">
         <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-400">เพื่อนติดเราทั้งหมด</span>
+          <span className="text-xs font-semibold text-slate-400">เพื่อนติดหนี้</span>
           <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
             <ArrowUpRight className="w-4 h-4" />
           </div>
@@ -40,10 +40,10 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
       </div>
 
       {/* 2. Total I Owe Others */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-amber-500/40 transition-all">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-amber-500/40 transition-all w-[85%] max-w-[320px]  snap-center shrink-0">
         <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all" />
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-400">เราติดเพื่อนทั้งหมด</span>
+          <span className="text-xs font-semibold text-slate-400">เราติดหนี้</span>
           <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
             <ArrowDownLeft className="w-4 h-4" />
           </div>
@@ -57,7 +57,7 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
       </div>
 
       {/* 3. Net Balance */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-teal-500/40 transition-all">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden group hover:border-teal-500/40 transition-all w-[85%] max-w-[320px]  snap-center shrink-0">
         <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-teal-500/10 rounded-full blur-xl group-hover:bg-teal-500/20 transition-all" />
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-slate-400">ยอดคงเหลือสุทธิ</span>
@@ -76,9 +76,9 @@ export const DashboardCards: React.FC<DashboardCardsProps> = ({
       </div>
 
       {/* 4. Action Card & Alerts */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between w-[85%] max-w-[320px]  snap-center shrink-0">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400">สถานะที่ต้องติดตาม</span>
+          <span className="text-xs font-semibold text-slate-400">สถานะบิล</span>
           <div className="flex space-x-1">
             {overdueBillsCount > 0 && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">

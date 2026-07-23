@@ -50,7 +50,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden text-white">
+      <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden text-white">
         
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/50">
@@ -160,70 +160,17 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>{isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google (Sign in with Google)'}</span>
+                <span>{isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}</span>
               </button>
 
-              <div className="relative flex items-center my-4">
-                <div className="flex-grow border-t border-slate-800"></div>
-                <span className="flex-shrink mx-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                  หรือเลือกบัญชีของคุณ
-                </span>
-                <div className="flex-grow border-t border-slate-800"></div>
-              </div>
-
-              {/* Account Quick Customizer Inputs */}
-              <div className="space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center space-x-1">
-                    <User className="w-3.5 h-3.5 text-amber-400" />
-                    <span>ชื่อผู้ใช้งาน Google (Display Name):</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    placeholder="เช่น เล็ก (Krekrit)"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center space-x-1">
-                    <Mail className="w-3.5 h-3.5 text-teal-400" />
-                    <span>อีเมล Google (Email Address):</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={e => setEmailInput(e.target.value)}
-                    placeholder="lexkrekrit@gmail.com"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-teal-500 outline-none"
-                  />
-                </div>
-
-                <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center space-x-1">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>รองรับทั้ง Google Workspace & Gmail</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleSimulatedGoogleLogin(emailInput, nameInput)}
-                    className="text-amber-400 hover:underline font-bold"
-                  >
-                    ยืนยันข้อมูล
-                  </button>
-                </div>
-              </div>
-
               {/* Anonymous / Guest Mode Option */}
-              <div className="pt-2">
+              <div className="pt-4">
                 <button
                   type="button"
                   onClick={onClose}
                   className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-xs border border-slate-700/80 transition-all active:scale-95"
                 >
-                  <span>🕶️ ใช้งานแบบไม่ระบุตัวตน (ข้ามการล็อกอิน)</span>
+                  <span>🕶️ ใช้งานแบบไม่ระบุตัวตน</span>
                 </button>
               </div>
 

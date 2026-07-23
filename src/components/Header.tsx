@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-slate-900/95 backdrop-blur-md text-white sticky top-0 z-30 border-b border-slate-800 shadow-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+      <div className="max-w-7xl mx-auto px-4   py-2.5">
         <div className="flex items-center justify-between gap-3">
           
           {/* Brand Logo & Name */}
@@ -81,23 +81,20 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-amber-400 via-teal-200 to-emerald-400 bg-clip-text text-transparent">
                   BearPay (หมีเปย์)
                 </h1>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  PRO
-                </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
+              <p className="hidden">
                 ระบบหารค่าใช้จ่ายกลุ่ม & บันทึกรายรับ-รายจ่าย
               </p>
             </div>
           </div>
 
           {/* Right Section: Settings Menu & Primary CTA */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-2 ">
 
             {/* Overdue Alert Badge */}
             {overdueCount > 0 && (
               <div
-                className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-rose-950/80 border border-rose-500/60 text-rose-300 text-xs font-bold animate-pulse"
+                className="hidden items-center space-x-1 px-2.5 py-1 rounded-xl bg-rose-950/80 border border-rose-500/60 text-rose-300 text-xs font-bold animate-pulse"
                 title={`มีบิลเกินกำหนด ${overdueCount} รายการ`}
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
@@ -125,10 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ) : (
                   <Settings className="w-3.5 h-3.5 text-amber-400" />
                 )}
-                <span className="hidden md:inline">
-                  {googleUser ? googleUser.name : 'เครื่องมือ & ตั้งค่า'}
-                </span>
-                <span className="md:hidden">
+                <span>
                   {googleUser ? googleUser.name : 'ตั้งค่า'}
                 </span>
                 <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isToolsOpen ? 'rotate-180' : ''}`} />
@@ -136,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Tools Dropdown Modal / Popover */}
               {isToolsOpen && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 text-xs animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-72  bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 text-xs animate-fadeIn">
                   <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
                     <span className="font-extrabold text-slate-200 flex items-center space-x-1.5">
                       <Settings className="w-4 h-4 text-amber-400" />
@@ -224,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="flex items-center space-x-2 font-bold text-amber-300">
                           <BookOpen className="w-4 h-4 text-amber-400" />
-                          <span>🐻 บันทึกรายรับ-รายจ่ายส่วนตัว</span>
+                          <span>🐻 บันทึกรับ-จ่าย</span>
                         </span>
                         <span className="text-[10px] text-slate-500">หมีจด</span>
                       </button>
@@ -240,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="flex items-center space-x-2 font-bold text-emerald-300">
                           <Trophy className="w-4 h-4 text-emerald-400" />
-                          <span>🏆 ศูนย์ปิดหนี้ & เคลียร์บัญชี</span>
+                          <span>🏆 เคลียร์บัญชี</span>
                         </span>
                         <span className="text-[10px] text-slate-500">Settlement</span>
                       </button>
@@ -256,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="flex items-center space-x-2 font-bold text-teal-300">
                           <Bot className="w-4 h-4 text-teal-400" />
-                          <span>🤖 เรียก BearPay กลุ่ม LINE</span>
+                          <span>🤖 บอท BearPay กลุ่ม LINE</span>
                         </span>
                         <span className="text-[10px] text-teal-400 font-bold">Bot</span>
                       </button>
@@ -351,10 +345,10 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
-            {/* Primary Action Button: + หารค่าใช้จ่าย */}
+            {/* Primary Action Button: + หารค่าใช้จ่าย (Hidden on mobile, uses FAB in BottomNav) */}
             <button
               onClick={onOpenNewBill}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
+              className="hidden items-center space-x-1.5 px-3.5 py-1.5   rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs  shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
             >
               <PlusCircle className="w-4 h-4" />
               <span>หารค่าใช้จ่าย</span>

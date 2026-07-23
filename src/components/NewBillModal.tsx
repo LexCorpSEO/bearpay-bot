@@ -3,6 +3,8 @@ import { Bill, Person, SplitMethod, BillCategory, BillItem, DailyScheduleItem } 
 import { Sparkles, X, Plus, Trash2, Upload, Camera, Calendar, DollarSign, Users, AlertCircle, Loader2, Repeat, CheckCircle2 } from 'lucide-react';
 import { formatTHB, formatThaiDate } from '../utils/thaiFormatters';
 
+import { compressImageForAI } from '../utils/imageCompressor';
+
 interface NewBillModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -112,50 +114,46 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
     setIsScanning(true);
     setScanError(null);
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      setReceiptImageBase64(base64);
+    try {
+      const compressed = await compressImageForAI(file, 1200, 0.82);
+      setReceiptImageBase64(compressed.dataUrl);
 
-      try {
-        const res = await fetch('/api/gemini/scan-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64,
-            mimeType: file.type,
-          }),
-        });
+      const res = await fetch('/api/gemini/scan-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: compressed.base64Data,
+          mimeType: compressed.mimeType,
+        }),
+      });
 
-        const result = await res.json();
+      const result = await res.json();
 
-        if (result.success && result.data) {
-          const { title: scTitle, totalAmount: scTotal, category: scCat, items: scItems } = result.data;
-          if (scTitle) setTitle(scTitle);
-          if (scTotal) setTotalAmount(scTotal.toString());
-          if (scCat) setCategory(scCat as BillCategory);
+      if (result.success && result.data) {
+        const { title: scTitle, totalAmount: scTotal, category: scCat, items: scItems } = result.data;
+        if (scTitle) setTitle(scTitle);
+        if (scTotal) setTotalAmount(scTotal.toString());
+        if (scCat) setCategory(scCat as BillCategory);
 
-          if (scItems && Array.isArray(scItems) && scItems.length > 0) {
-            setItems(scItems.map((it: any, idx: number) => ({
-              id: 'sc_item_' + idx,
-              name: it.name || `รายการที่ ${idx + 1}`,
-              price: (it.price || 0).toString(),
-              personIds: [],
-            })));
-            setSplitMethod('ITEMIZED');
-          }
-
-          setActiveTab('MANUAL'); // Switch to manual tab for review
-        } else {
-          setScanError(result.error || 'ไม่สามารถสแกนใบเสร็จได้');
+        if (scItems && Array.isArray(scItems) && scItems.length > 0) {
+          setItems(scItems.map((it: any, idx: number) => ({
+            id: 'sc_item_' + idx,
+            name: it.name || `รายการที่ ${idx + 1}`,
+            price: (it.price || 0).toString(),
+            personIds: [],
+          })));
+          setSplitMethod('ITEMIZED');
         }
-      } catch (err: any) {
-        setScanError('เกิดข้อผิดพลาดในการอ่านรูปภาพ');
-      } finally {
-        setIsScanning(false);
+
+        setActiveTab('MANUAL'); // Switch to manual tab for review
+      } else {
+        setScanError(result.error || 'ไม่สามารถสแกนใบเสร็จได้');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setScanError('เกิดข้อผิดพลาดในการอ่านรูปภาพ');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   // Save Bill Submission
@@ -307,18 +305,18 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 shrink-0">
+        <div className="flex items-center justify-between p-4  border-b border-slate-800 bg-slate-900/90 shrink-0">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">
               🐥
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">สร้างรายการหารค่าใช้จ่ายใหม่</h2>
-              <p className="text-xs text-slate-400">คำนวณยอดหารและตั้งกำหนดวันชำระเงิน</p>
+              <h2 className="text-base font-bold text-white">สร้างบิลใหม่</h2>
+              <p className="text-xs text-slate-400">คำนวณยอดหาร</p>
             </div>
           </div>
           <button
@@ -355,7 +353,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
         </div>
 
         {/* Body Content */}
-        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+        <div className="p-4  space-y-5 overflow-y-auto flex-1 min-h-0">
           
           {/* AI Scan Tab View */}
           {activeTab === 'AI_SCAN' && (
@@ -365,7 +363,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
               </div>
               <div>
                 <h3 className="font-bold text-white text-base">สแกนใบเสร็จอัตโนมัติด้วย AI</h3>
-                <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                <p className="text-xs text-slate-400 mt-1 max-w-3xl mx-auto">
                   อัปโหลดรูปใบเสร็จอาหาร ค่าทริป หรือค่าบริการ Gemini AI จะอ่านชื่อร้าน รายการอาหาร และยอดเงินรวมให้อัตโนมัติ!
                 </p>
               </div>
@@ -406,8 +404,8 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             
             {/* Title & Category */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2 space-y-1">
+            <div className="grid grid-cols-1  gap-3">
+              <div className=" space-y-1">
                 <label className="text-xs font-semibold text-slate-300">ชื่อรายการ / ชื่อบิล *</label>
                 <input
                   type="text"
@@ -438,7 +436,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
             </div>
 
             {/* Total Amount & Due Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1  gap-3">
               {splitMethod !== 'ITEMIZED' && (
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-300">จำนวนเงินรวม (บาท) *</label>
@@ -454,7 +452,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
                 </div>
               )}
 
-              <div className="space-y-1 sm:col-span-1">
+              <div className="space-y-1 ">
                 <label className="text-xs font-semibold text-slate-300">วันกำหนดชำระเงิน *</label>
                 <div className="flex space-x-1 mb-1">
                   <button
@@ -492,7 +490,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
             {/* Split Method Selector */}
             <div className="space-y-1.5 pt-2">
               <label className="text-xs font-semibold text-slate-300">รูปแบบการหาร</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2  gap-2">
                 <button
                   type="button"
                   onClick={() => setSplitMethod('EQUAL')}
@@ -741,7 +739,7 @@ export const NewBillModal: React.FC<NewBillModalProps> = ({
                 <span>เพื่อนที่มีส่วนร่วมในการหาร ({selectedPersonIds.length} คน)</span>
               </label>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2  gap-2">
                 {people.filter(p => !p.isMe).map(person => {
                   const isSelected = selectedPersonIds.includes(person.id);
                   return (

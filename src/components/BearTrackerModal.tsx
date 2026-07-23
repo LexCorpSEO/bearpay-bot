@@ -597,25 +597,25 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-black/80 backdrop-blur-sm overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl my-auto max-h-[92vh] flex flex-col">
         
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-amber-600/30 via-orange-600/20 to-amber-700/30 border-b border-slate-800 p-4 sm:p-5 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-amber-600/30 via-orange-600/20 to-amber-700/30 border-b border-slate-800 p-4  flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl sm:text-3xl shadow-inner shrink-0">
+            <div className="w-10 h-10   rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl  shadow-inner shrink-0">
               🐻
             </div>
             <div>
               <div className="flex items-center space-x-2 flex-wrap gap-1">
-                <h2 className="text-base sm:text-lg font-black text-white tracking-tight">หมีจด (Personal Income & Expense)</h2>
+                <h2 className="text-base  font-black text-white tracking-tight">หมีจด (บัญชีส่วนตัว)</h2>
                 <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center space-x-1 shrink-0">
                   <span>🐻</span>
-                  <span>สมุดบันทึกรายรับ-รายจ่าย</span>
+                  <span>สมุดบันทึกรับ-จ่าย</span>
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
-                บันทึกรายรับ-รายจ่าย แยกตามบัญชีบุคคล พร้อมรายงานกราฟแท่งเปรียบเทียบรายเดือน
+                จัดการรายรับ-รายจ่ายของคุณ พร้อมดูสรุป
               </p>
             </div>
           </div>
@@ -628,12 +628,12 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
         </div>
 
         {/* Private Ledger Notice Badge */}
-        <div className="bg-slate-950 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-slate-800 flex items-center justify-between text-xs text-slate-300 shrink-0">
+        <div className="bg-slate-950 px-4  py-2.5  border-b border-slate-800 flex items-center justify-between text-xs text-slate-300 shrink-0">
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 rounded-lg font-bold border border-amber-500/30 shrink-0">
-              🔒 บัญชีส่วนตัว (Personal Ledger)
+              🔒 บัญชีส่วนตัว
             </span>
-            <span className="hidden sm:inline">บันทึกและวิเคราะห์เฉพาะส่วนตัวของคุณ 100% ไม่ปะปนกับคนอื่น</span>
+            <span className="hidden ">บันทึกข้อมูลเฉพาะคุณ</span>
           </div>
         </div>
 
@@ -641,7 +641,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
         <div className="flex border-b border-slate-800 bg-slate-900/50 p-2 gap-2 shrink-0">
           <button
             onClick={() => setActiveTab('RECORD')}
-            className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+            className={`flex-1 py-2  rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'RECORD'
                 ? 'bg-slate-800 text-amber-400 border border-amber-500/30 shadow'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -653,7 +653,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('CALENDAR')}
-            className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+            className={`flex-1 py-2  rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'CALENDAR'
                 ? 'bg-slate-800 text-amber-400 border border-amber-500/30 shadow'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -665,7 +665,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('REPORT')}
-            className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+            className={`flex-1 py-2  rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'REPORT'
                 ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -677,11 +677,11 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
         </div>
 
         {/* Modal Scroll Content */}
-        <div className="p-4 sm:p-5 space-y-6 overflow-y-auto flex-1 custom-scrollbar min-h-0">
+        <div className="p-4  space-y-6 overflow-y-auto flex-1 custom-scrollbar min-h-0">
           
           {/* Top Summary Banner */}
           <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col  items-start  justify-between gap-4">
               <div className="flex items-center space-x-3">
                 <div className="text-4xl animate-bounce">
                   {netSavings >= 0 ? '🐻' : '🐻‍❄️'}
@@ -702,7 +702,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
 
               <button
                 onClick={handleCopySummary}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-amber-950 hover:text-amber-300 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center space-x-1.5 transition-all self-end sm:self-center"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-amber-950 hover:text-amber-300 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center space-x-1.5 transition-all self-end "
               >
                 {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
                 <span>{copiedSummary ? 'คัดลอกแล้ว!' : 'คัดลอกสรุปบัญชี'}</span>
@@ -901,7 +901,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1  gap-2">
                       <div>
                         <label className="text-[10px] text-slate-400 font-bold block mb-0.5">ชื่อเป้าหมาย</label>
                         <input
@@ -1118,7 +1118,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
                   <label className="text-[11px] font-semibold text-slate-300">
                     เลือกหมวดหมู่ ({type === 'EXPENSE' ? 'รายจ่าย' : 'รายรับ'}):
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-3  gap-2">
                     {(type === 'EXPENSE' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => {
                       const isSelected = selectedCategory === cat.name;
                       return (
@@ -1143,7 +1143,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
                 </div>
 
                 {/* Inputs: Amount, Date, Note */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1  gap-3">
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">จำนวนเงิน (บาท)</label>
                     <input
@@ -1219,7 +1219,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1  gap-2 text-xs">
                   {/* Category Filter */}
                   <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5">
                     <Filter className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -1567,7 +1567,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
               </div>
 
               {/* Expense Category Distribution Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1  gap-4">
                 
                 {/* Category Progress Bars */}
                 <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
@@ -1656,7 +1656,7 @@ export const BearTrackerModal: React.FC<BearTrackerModalProps> = ({
       {/* SLIP / RECEIPT MODAL PREVIEW */}
       {viewingSlipUrl && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 max-w-lg w-full space-y-4 shadow-2xl relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 max-w-3xl w-full space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2">
                 <Camera className="w-5 h-5 text-amber-400" />

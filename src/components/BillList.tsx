@@ -55,10 +55,10 @@ export const BillList: React.FC<BillListProps> = ({
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm my-6">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4  shadow-sm my-6">
       
       {/* Search & Filter Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+      <div className="flex flex-col   justify-between gap-3 mb-6">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center space-x-2">
             <span>รายการบิลและค่าใช้จ่ายทั้งหมด</span>
@@ -72,10 +72,10 @@ export const BillList: React.FC<BillListProps> = ({
         </div>
 
         {/* Filter Tabs & Search Box */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="flex flex-col  items-stretch  gap-2">
           
           {/* Search Box */}
-          <div className="relative flex-1 sm:w-60">
+          <div className="relative flex-1 ">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -169,7 +169,7 @@ export const BillList: React.FC<BillListProps> = ({
                 }`}
                 onClick={() => onSelectBill(bill)}
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-col   justify-between gap-3">
                   
                   {/* Left Column: Icon, Title & Date */}
                   <div className="flex items-start space-x-3.5">
@@ -254,8 +254,8 @@ export const BillList: React.FC<BillListProps> = ({
                   </div>
 
                   {/* Right Column: Amount, Progress & Trigger Reminder */}
-                  <div className="flex md:flex-col items-center md:items-end justify-between border-t md:border-t-0 border-slate-800/80 pt-2.5 md:pt-0">
-                    <div className="text-left md:text-right">
+                  <div className="flex  items-center  justify-between border-t  border-slate-800/80 pt-2.5 ">
+                    <div className="text-left ">
                       <div className="text-xs text-slate-400 font-medium">ยอดรวมบิล</div>
                       <div className="text-lg font-black text-white">
                         {formatTHB(bill.totalAmount)}

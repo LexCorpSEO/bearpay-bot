@@ -100,8 +100,8 @@ export const FriendManagerModal: React.FC<FriendManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/90 shrink-0">
@@ -123,7 +123,7 @@ export const FriendManagerModal: React.FC<FriendManagerModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-5 space-y-5 overflow-y-auto flex-1 min-h-0">
+        <div className="p-4  space-y-5 overflow-y-auto flex-1 min-h-0">
           
           {/* Add / Edit Form */}
           <form onSubmit={handleAddOrUpdate} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -131,7 +131,7 @@ export const FriendManagerModal: React.FC<FriendManagerModalProps> = ({
               {editingPersonId ? '✏️ แก้ไขข้อมูลเพื่อน' : '➕ เพิ่มเพื่อนคนใหม่'}
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1  gap-3">
               <div className="space-y-1">
                 <label className="text-[11px] text-slate-300">ชื่อเพื่อน *</label>
                 <input

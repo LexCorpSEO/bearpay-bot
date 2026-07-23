@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BearTransaction, Person } from '../types';
 import { formatTHB, formatThaiDate } from '../utils/thaiFormatters';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './BearTrackerModal';
+import { compressImageForAI } from '../utils/imageCompressor';
 import {
   Plus,
   Trash2,
@@ -125,81 +126,78 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result as string;
-      setAttachedSlipUrl(base64Data);
-      setIsScanningSlip(true);
-      setScanSuccessMsg(null);
+    setIsScanningSlip(true);
+    setScanSuccessMsg(null);
 
-      try {
-        let res = await fetch('/api/gemini/scan-receipt', {
+    try {
+      const compressed = await compressImageForAI(file, 1200, 0.82);
+      setAttachedSlipUrl(compressed.dataUrl);
+
+      let res = await fetch('/api/gemini/scan-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: compressed.base64Data,
+          mimeType: compressed.mimeType
+        })
+      });
+
+      let json = await res.json();
+
+      if (!json.success || !json.data || !json.data.totalAmount) {
+        res = await fetch('/api/gemini/scan-slip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            imageBase64: base64Data,
-            mimeType: file.type || 'image/jpeg'
+            imageBase64: compressed.base64Data,
+            mimeType: compressed.mimeType
           })
         });
-
-        let json = await res.json();
-
-        if (!json.success || !json.data || !json.data.totalAmount) {
-          res = await fetch('/api/gemini/scan-slip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageBase64: base64Data,
-              mimeType: file.type || 'image/jpeg'
-            })
-          });
-          json = await res.json();
-          if (json.success && json.data) {
-            const data = json.data;
-            if (data.amount) setAmount(data.amount.toString());
-            setType('EXPENSE');
-            const noteText = data.payerName || data.summaryNote || 'สลิปโอนเงิน';
-            setNote(noteText);
-            setScanSuccessMsg(`✨ สแกนสลิปโอนเงินสำเร็จ! ยอด ${formatTHB(data.amount || 0)} บาท (${data.summaryNote || ''})`);
-            setBearMood('📸 พี่หมีอ่านสลิปแล้วถอดรายละเอียดให้ครบเลยฮะ!');
-          } else {
-            alert('ไม่สามารถวิเคราะห์สลิปหรือใบเสร็จได้ กรุณากรอกข้อมูลด้วยตนเอง');
-          }
-        } else {
+        json = await res.json();
+        if (json.success && json.data) {
           const data = json.data;
-          if (data.totalAmount) setAmount(data.totalAmount.toString());
+          if (data.amount) setAmount(data.amount.toString());
           setType('EXPENSE');
-          
-          let noteText = data.title || 'รายการใบเสร็จ';
-          if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-            const itemNames = data.items.map((it: any) => it.name).filter(Boolean).join(', ');
-            if (itemNames) noteText += ` (${itemNames})`;
-          }
+          const noteText = data.payerName || data.summaryNote || 'สลิปโอนเงิน';
           setNote(noteText);
-
-          if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
-            setDate(data.date);
-          }
-
-          if (data.category) {
-            const mappedCat = mapAiCategoryToBearCategory(data.category, 'EXPENSE');
-            const foundCat = EXPENSE_CATEGORIES.find(c => c.name === mappedCat) || EXPENSE_CATEGORIES[0];
-            setSelectedCategory(foundCat.name);
-            setSelectedCategoryIcon(foundCat.icon);
-            setBearMood(foundCat.mood);
-          }
-
-          setScanSuccessMsg(`✨ สแกนใบเสร็จสำเร็จ! ร้าน ${data.title || ''} ยอดรวม ${formatTHB(data.totalAmount || 0)}`);
-          setBearMood('📸 พี่หมีอ่านใบเสร็จและถอดรายการให้อย่างเรียบร้อยฮะ!');
+          setScanSuccessMsg(`✨ สแกนสลิปโอนเงินสำเร็จ! ยอด ${formatTHB(data.amount || 0)} บาท (${data.summaryNote || ''})`);
+          setBearMood('📸 พี่หมีอ่านสลิปแล้วถอดรายละเอียดให้ครบเลยฮะ!');
+        } else {
+          alert('ไม่สามารถวิเคราะห์สลิปหรือใบเสร็จได้ กรุณากรอกข้อมูลด้วยตนเอง');
         }
-      } catch (err) {
-        console.error('Scan Error:', err);
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ AI สแกนใบเสร็จ');
-      } finally {
-        setIsScanningSlip(false);
+      } else {
+        const data = json.data;
+        if (data.totalAmount) setAmount(data.totalAmount.toString());
+        setType('EXPENSE');
+        
+        let noteText = data.title || 'รายการใบเสร็จ';
+        if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+          const itemNames = data.items.map((it: any) => it.name).filter(Boolean).join(', ');
+          if (itemNames) noteText += ` (${itemNames})`;
+        }
+        setNote(noteText);
+
+        if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+          setDate(data.date);
+        }
+
+        if (data.category) {
+          const mappedCat = mapAiCategoryToBearCategory(data.category, 'EXPENSE');
+          const foundCat = EXPENSE_CATEGORIES.find(c => c.name === mappedCat) || EXPENSE_CATEGORIES[0];
+          setSelectedCategory(foundCat.name);
+          setSelectedCategoryIcon(foundCat.icon);
+          setBearMood(foundCat.mood);
+        }
+
+        setScanSuccessMsg(`✨ สแกนใบเสร็จสำเร็จ! ร้าน ${data.title || ''} ยอดรวม ${formatTHB(data.totalAmount || 0)}`);
+        setBearMood('📸 พี่หมีอ่านใบเสร็จและถอดรายการให้อย่างเรียบร้อยฮะ!');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Scan Error:', err);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ AI สแกนใบเสร็จ');
+    } finally {
+      setIsScanningSlip(false);
+    }
   };
 
   // Monthly Budget State
@@ -580,7 +578,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
       
       {/* Function Header Banner */}
       <div className="bg-gradient-to-r from-amber-600/30 via-orange-600/20 to-amber-700/30 border border-amber-500/30 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col   justify-between gap-4">
           <div className="flex items-start space-x-4">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-4xl shadow-inner shrink-0">
               🐻
@@ -590,15 +588,15 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
                 <span className="text-xs font-black bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   ฟังก์ชันที่ 2
                 </span>
-                <h2 className="text-2xl font-black text-white tracking-tight">หมีจด (Personal Expense Ledger)</h2>
+                <h2 className="text-2xl font-black text-white tracking-tight">หมีจด (บัญชีส่วนตัว)</h2>
               </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-xl">
-                สมุดบันทึกรายรับ-รายจ่ายส่วนตัว 🔒 เป็นส่วนตัวของคุณ 100% พร้อมช่องค้นหา ตัวกรอง ปฏิทินรายรับ-รายจ่าย และกราฟรายงานเปรียบเทียบประจำเดือน
+              <p className="text-xs text-slate-300 mt-1 max-w-md">
+                บันทึกและจัดการรายรับ-รายจ่ายส่วนตัวของคุณอย่างปลอดภัย
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 self-start md:self-center">
+          <div className="flex items-center space-x-2 self-start ">
             <button
               onClick={handleCopySummary}
               className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg flex items-center space-x-2 transition-all active:scale-95"
@@ -610,7 +608,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
         </div>
 
         {/* Financial Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+        <div className="grid grid-cols-1  gap-3 mt-6">
           <div className="bg-slate-950/80 p-4 rounded-2xl border border-emerald-500/30 shadow-inner">
             <div className="text-xs text-emerald-400 font-bold uppercase tracking-wider flex items-center space-x-1.5">
               <TrendingUp className="w-4 h-4" />
@@ -644,7 +642,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
       </div>
 
       {/* Private Ledger Notice Badge */}
-      <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-300 shadow-lg">
+      <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-3.5 flex flex-col  items-start  justify-between gap-2 text-xs text-slate-300 shadow-lg">
         <div className="flex items-center space-x-2">
           <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-lg font-bold border border-amber-500/30 flex items-center space-x-1">
             <span>🔒</span>
@@ -656,7 +654,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
 
       {/* Monthly Budget Tracker & Warning Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div className="flex flex-col  items-start  justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
               <Target className="w-5 h-5" />
@@ -700,7 +698,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex flex-col  items-center gap-2">
               <div className="relative w-full">
                 <input
                   type="number"
@@ -714,17 +712,17 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">บาท</span>
               </div>
 
-              <div className="flex items-center space-x-2 w-full sm:w-auto shrink-0">
+              <div className="flex items-center space-x-2 w-full  shrink-0">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow w-full sm:w-auto"
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow w-full "
                 >
                   บันทึกวงเงิน
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditingBudget(false)}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl w-full sm:w-auto"
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl w-full "
                 >
                   ยกเลิก
                 </button>
@@ -749,7 +747,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
         )}
 
         {/* Budget Progress Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1  gap-3">
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
             <span className="text-[11px] text-slate-400 font-bold">🎯 งบประมาณตั้งไว้</span>
             <div className="text-base font-black text-white mt-0.5">{formatTHB(monthlyBudget)}</div>
@@ -836,7 +834,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
 
       {/* Savings Goal Tracker Card */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div className="flex flex-col  items-start  justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
               <PiggyBank className="w-5 h-5" />
@@ -881,7 +879,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1  gap-3">
               <div>
                 <label className="text-[11px] font-bold text-slate-300 mb-1 block">🎯 ชื่อเป้าหมายออมเงิน</label>
                 <input
@@ -939,11 +937,11 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
                 <span className="font-medium">ดึงเงินคงเหลือสะสมส่วนตัวสุทธิ (รายรับ - รายจ่าย) ในระบบมาสมทบอัตโนมัติ</span>
               </label>
 
-              <div className="pt-1.5 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="pt-1.5 border-t border-slate-800 flex flex-col   justify-between gap-2">
                 <label className="text-[11px] text-slate-400 font-semibold">
                   เงินออมตั้งต้น / เงินออมนอกระบบสมทบเพิ่ม (บาท):
                 </label>
-                <div className="relative w-full sm:w-48">
+                <div className="relative w-full ">
                   <input
                     type="number"
                     placeholder="0"
@@ -977,27 +975,27 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
         )}
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2  gap-2.5">
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
             <span className="text-[11px] text-slate-400 font-bold block">🎯 เป้าหมายเงินออม</span>
-            <div className="text-sm sm:text-base font-black text-white mt-0.5">{formatTHB(savingsGoalTarget)}</div>
+            <div className="text-sm  font-black text-white mt-0.5">{formatTHB(savingsGoalTarget)}</div>
           </div>
 
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
             <span className="text-[11px] text-slate-400 font-bold block">💰 สะสมได้แล้ว</span>
-            <div className="text-sm sm:text-base font-black text-emerald-400 mt-0.5">{formatTHB(currentSavingsAmount)}</div>
+            <div className="text-sm  font-black text-emerald-400 mt-0.5">{formatTHB(currentSavingsAmount)}</div>
           </div>
 
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
             <span className="text-[11px] text-slate-400 font-bold block">🪙 ขาดอีกเพียง</span>
-            <div className="text-sm sm:text-base font-black text-amber-300 mt-0.5">
+            <div className="text-sm  font-black text-amber-300 mt-0.5">
               {savingsRemainingAmount > 0 ? formatTHB(savingsRemainingAmount) : '🏆 ครบเป้าแล้ว!'}
             </div>
           </div>
 
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
             <span className="text-[11px] text-slate-400 font-bold block">📊 เปอร์เซ็นต์เป้าหมาย</span>
-            <div className={`text-sm sm:text-base font-black mt-0.5 ${
+            <div className={`text-sm  font-black mt-0.5 ${
               savingsProgressPercentage >= 100 ? 'text-amber-400' :
               savingsProgressPercentage >= 75 ? 'text-emerald-400' :
               savingsProgressPercentage >= 50 ? 'text-teal-300' : 'text-cyan-300'
@@ -1080,7 +1078,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
       </div>
 
       {/* Primary Sub-Tabs: Record & History vs Income-Expense Calendar vs Monthly Report */}
-      <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 w-full sm:w-fit">
+      <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 w-full ">
         <button
           onClick={() => setActiveTab('RECORD')}
           className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -1120,10 +1118,10 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
 
       {/* VIEW 1: RECORD & HISTORY WITH SEARCH & FILTERS */}
       {activeTab === 'RECORD' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1  gap-6">
           
-          {/* Form Side */}
-          <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl h-fit">
+          {/* Form Side (Hidden on Mobile, use floating '+' button instead) */}
+          <div className="hidden bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl h-fit">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center space-x-2">
                 <Plus className="w-4 h-4 text-amber-400" />
@@ -1325,7 +1323,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
           </div>
 
           {/* History Side with Search & Filter Bar */}
-          <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+          <div className=" bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center space-x-2">
                 <span>ประวัติรายการบัญชี ({filteredTransactions.length})</span>
@@ -1381,7 +1379,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1  gap-2 text-xs">
                 {/* Category Dropdown */}
                 <div className="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5">
                   <Filter className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -1511,7 +1509,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
             
             {/* Calendar Header Month Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="flex flex-col  items-center justify-between gap-3 border-b border-slate-800 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
                   <CalendarIcon className="w-5 h-5" />
@@ -1581,7 +1579,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
             })()}
 
             {/* Calendar Grid Table */}
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 pt-2">
+            <div className="grid grid-cols-7 gap-1.5  pt-2">
               {/* Day Headers */}
               {DAY_NAMES.map((d, idx) => (
                 <div
@@ -1596,7 +1594,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
 
               {/* Blank Offset Cells */}
               {Array.from({ length: startingDayOfWeek }).map((_, idx) => (
-                <div key={`blank-${idx}`} className="bg-slate-950/40 rounded-2xl p-2 min-h-[70px] sm:min-h-[90px] opacity-20" />
+                <div key={`blank-${idx}`} className="bg-slate-950/40 rounded-2xl p-2 min-h-[70px]  opacity-20" />
               ))}
 
               {/* Days Cells */}
@@ -1614,7 +1612,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
                   <button
                     key={dateStr}
                     onClick={() => setSelectedCalDate(dateStr)}
-                    className={`rounded-2xl p-1.5 sm:p-2 min-h-[75px] sm:min-h-[95px] flex flex-col justify-between text-left transition-all relative border ${
+                    className={`rounded-2xl p-1.5  min-h-[75px]  flex flex-col justify-between text-left transition-all relative border ${
                       isSelected
                         ? 'bg-amber-500/20 border-amber-400 shadow-lg shadow-amber-500/10 scale-[1.02]'
                         : isToday
@@ -1770,7 +1768,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
           </div>
 
           {/* Breakdown & Bear Insights */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1  gap-6">
             
             {/* Category Progress Bars */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
@@ -1855,7 +1853,7 @@ export const BearJodInlineView: React.FC<BearJodInlineViewProps> = ({
       {/* SLIP / RECEIPT MODAL PREVIEW */}
       {viewingSlipUrl && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 max-w-lg w-full space-y-4 shadow-2xl relative">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 max-w-md w-full space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2">
                 <Camera className="w-5 h-5 text-amber-400" />

@@ -32,8 +32,8 @@ export const LineFlexCardModal: React.FC<LineFlexCardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/90 shrink-0">
@@ -53,7 +53,7 @@ export const LineFlexCardModal: React.FC<LineFlexCardModalProps> = ({
         </div>
 
         {/* Content Preview */}
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <div className="p-4  space-y-4 overflow-y-auto flex-1 min-h-0">
           
           {/* Simulated LINE Chat Bubble */}
           <div className="bg-[#8cabd9] p-4 rounded-2xl space-y-2">

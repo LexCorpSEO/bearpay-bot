@@ -4,6 +4,8 @@ import { formatTHB, formatThaiDate, getDaysRemaining } from '../utils/thaiFormat
 import { getPromptPayQRImageUrl } from '../utils/promptpay';
 import { X, QrCode, Send, CheckCircle2, AlertCircle, Clock, Upload, Camera, Sparkles, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react';
 
+import { compressImageForAI } from '../utils/imageCompressor';
+
 interface BillDetailModalProps {
   bill: Bill | null;
   people: Person[];
@@ -47,36 +49,32 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
     setSlipError(null);
     setVerificationResult(null);
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      setSlipBase64(base64);
+    try {
+      const compressed = await compressImageForAI(file, 1200, 0.82);
+      setSlipBase64(compressed.dataUrl);
 
-      try {
-        const res = await fetch('/api/gemini/scan-slip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64,
-            mimeType: file.type,
-            expectedAmount,
-            debtorName: person.name,
-          }),
-        });
+      const res = await fetch('/api/gemini/scan-slip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: compressed.base64Data,
+          mimeType: compressed.mimeType,
+          expectedAmount,
+          debtorName: person.name,
+        }),
+      });
 
-        const result = await res.json();
-        if (result.success && result.data) {
-          setVerificationResult(result.data);
-        } else {
-          setSlipError(result.error || 'ไม่สามารถตรวจสอบสลิปได้');
-        }
-      } catch (err) {
-        setSlipError('เกิดข้อผิดพลาดในการส่งไฟล์สลิป');
-      } finally {
-        setIsVerifyingSlip(false);
+      const result = await res.json();
+      if (result.success && result.data) {
+        setVerificationResult(result.data);
+      } else {
+        setSlipError(result.error || 'ไม่สามารถตรวจสอบสลิปได้');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setSlipError('เกิดข้อผิดพลาดในการส่งไฟล์สลิป');
+    } finally {
+      setIsVerifyingSlip(false);
+    }
   };
 
   const confirmSlipPayment = (personId: string, amount: number) => {
@@ -93,11 +91,11 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start  justify-center p-2  bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl my-auto max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 shrink-0">
+        <div className="flex items-center justify-between p-4  border-b border-slate-800 bg-slate-900/90 shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl font-bold shrink-0">
               🧾
@@ -123,10 +121,10 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+        <div className="p-4  space-y-5 overflow-y-auto flex-1 min-h-0">
           
           {/* Overview Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2  gap-3">
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
               <span className="text-[11px] text-slate-400">ยอดรวมบิล</span>
               <div className="text-lg font-black text-emerald-400">{formatTHB(bill.totalAmount)}</div>
@@ -144,7 +142,7 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
                 )}
               </div>
             </div>
-            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 col-span-2 sm:col-span-1">
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 col-span-2 ">
               <span className="text-[11px] text-slate-400">สถานะบิล</span>
               <div className="text-sm font-bold mt-0.5">
                 {bill.isCompleted ? (
@@ -267,7 +265,7 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
                         : 'border-slate-800'
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex flex-col   justify-between gap-3">
                       
                       {/* Left: Avatar & Name */}
                       <div className="flex items-center space-x-3">
